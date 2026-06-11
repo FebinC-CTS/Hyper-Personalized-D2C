@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { Package, Repeat, TrendingDown, TrendingUp } from "lucide-react";
+import { Award, Package, Repeat, TrendingUp } from "lucide-react";
 import { usePersona } from "@/store";
 import { ordersByPersona } from "@/data/orders";
 import { formatCurrency } from "@/lib/utils";
@@ -15,7 +15,7 @@ export function HomeStats() {
       orders: orders.length,
       totalSpend,
       avg,
-      churnRisk: persona.churnRisk,
+      tenureMonths: persona.tenureMonths,
     };
   }, [persona]);
 
@@ -39,15 +39,13 @@ export function HomeStats() {
       color: "text-primo-700",
     },
     {
-      label: "Churn risk",
-      value: `${Math.round(stats.churnRisk * 100)}%`,
-      icon: TrendingDown,
-      color:
-        stats.churnRisk > 0.5
-          ? "text-coral-600"
-          : stats.churnRisk > 0.25
-          ? "text-amber-600"
-          : "text-aqua-600",
+      label: "Member for",
+      value:
+        stats.tenureMonths >= 12
+          ? `${Math.floor(stats.tenureMonths / 12)}y ${stats.tenureMonths % 12}mo`
+          : `${stats.tenureMonths} mo`,
+      icon: Award,
+      color: "text-primo-700",
     },
   ];
 
