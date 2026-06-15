@@ -1,18 +1,14 @@
-import { Outlet, useLocation } from "react-router-dom";
+import { Outlet } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { AssistantPanel } from "@/components/AssistantPanel";
-import { ChurnModal } from "@/components/ChurnModal";
 import { CartDrawer } from "@/components/CartDrawer";
 import { Toaster } from "@/components/Toaster";
 
-export function AppShell() {
-  const location = useLocation();
-  const isLanding = location.pathname === "/";
-
-  if (isLanding) {
-    return <Outlet />;
-  }
-
+/**
+ * Chrome for the customer-facing storefront: top nav, shopping assistant,
+ * and cart. The churn-rescue tooling lives in the admin console, not here.
+ */
+export function CustomerShell() {
   return (
     <div className="min-h-screen flex flex-col bg-slate-50">
       <Header />
@@ -20,7 +16,6 @@ export function AppShell() {
         <Outlet />
       </main>
       <AssistantPanel />
-      <ChurnModal />
       <CartDrawer />
       <Toaster />
     </div>

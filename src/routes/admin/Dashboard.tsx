@@ -1,6 +1,5 @@
 import { useCallback } from "react";
-import { ArrowDownRight, ArrowUpRight, ShieldAlert } from "lucide-react";
-import { usePersona, useChurn } from "@/store";
+import { ArrowDownRight, ArrowUpRight } from "lucide-react";
 import {
   churnRiskTable,
   cohortRetention,
@@ -10,11 +9,9 @@ import {
 } from "@/data/analytics";
 import { claudeKeyConfigured, useClaudeText } from "@/lib/claude";
 import { insightsPrompt } from "@/lib/prompts";
-import { cn, formatCurrency } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import { AIResponse } from "@/components/AIResponse";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 
 // Compact, text-only snapshot of the dashboard for Claude to reason over.
 function buildMetricsSummary(): string {
@@ -49,10 +46,7 @@ function parseBullets(text: string): string[] {
     .filter(Boolean);
 }
 
-export default function Analytics() {
-  const { setPersonaId } = usePersona();
-  const { openChurn } = useChurn();
-
+export default function Dashboard() {
   const build = useCallback(() => insightsPrompt(buildMetricsSummary()), []);
   const { text, loading, error, refetch } = useClaudeText(build, {
     cacheKey: "insights:v1",
@@ -62,20 +56,14 @@ export default function Analytics() {
 
   const maxFunnel = funnel[0].users;
 
-  const runRescue = (customerId: string) => {
-    // Our demo persona "marcus" maps to a real persona the rescue can analyze.
-    if (customerId === "marcus") setPersonaId("marcus");
-    openChurn();
-  };
-
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-semibold tracking-tight text-slate-900">
-          Customer analytics
+          Dashboard
         </h1>
         <p className="mt-1 text-slate-600">
-          Funnel, cohort retention, AI insights, and churn-risk monitoring.
+          Funnel, cohort retention, and AI insights across the subscriber base.
         </p>
       </div>
 
@@ -211,70 +199,6 @@ export default function Analytics() {
               </div>
             ))}
           </div>
-        </CardContent>
-      </Card>
-
-      {/* Churn risk table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Churn-risk monitor</CardTitle>
-        </CardHeader>
-        <CardContent className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-slate-200 text-left text-[10px] uppercase tracking-wider text-slate-400">
-                <th className="pb-2 font-medium">Customer</th>
-                <th className="pb-2 font-medium">Risk</th>
-                <th className="pb-2 font-medium">Top reasons</th>
-                <th className="pb-2 font-medium">Last order</th>
-                <th className="pb-2 font-medium">LTV</th>
-                <th className="pb-2 font-medium" />
-              </tr>
-            </thead>
-            <tbody>
-              {churnRiskTable.map((row) => (
-                <tr
-                  key={row.customerId}
-                  className="border-b border-slate-100 last:border-0"
-                >
-                  <td className="py-2.5 font-medium text-slate-800">
-                    {row.name}
-                  </td>
-                  <td className="py-2.5">
-                    <Badge
-                      variant={row.riskScore >= 0.65 ? "warning" : "default"}
-                    >
-                      {Math.round(row.riskScore * 100)}%
-                    </Badge>
-                  </td>
-                  <td className="max-w-xs py-2.5 text-xs text-slate-500">
-                    {row.topReasons.join(" · ")}
-                  </td>
-                  <td className="py-2.5 text-slate-600">
-                    {row.lastOrderDaysAgo}d ago
-                  </td>
-                  <td className="py-2.5 text-slate-600">
-                    {formatCurrency(row.ltv)}
-                  </td>
-                  <td className="py-2.5 text-right">
-                    <Button
-                      variant={row.customerId === "marcus" ? "ai" : "outline"}
-                      size="sm"
-                      onClick={() => runRescue(row.customerId)}
-                      title={
-                        row.customerId === "marcus"
-                          ? "Generate an AI churn rescue for Marcus"
-                          : "Live rescue is wired for the Marcus demo persona"
-                      }
-                    >
-                      <ShieldAlert className="h-3.5 w-3.5" />
-                      Rescue
-                    </Button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
         </CardContent>
       </Card>
     </div>

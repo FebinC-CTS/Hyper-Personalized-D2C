@@ -1,12 +1,12 @@
 import { NavLink, useNavigate } from "react-router-dom";
 import {
   ChevronDown,
+  LogOut,
   MessageSquare,
-  ShieldAlert,
   ShoppingBag,
   Sparkles,
 } from "lucide-react";
-import { useAssistant, useCart, useChurn, usePersona } from "@/store";
+import { useAssistant, useCart, usePersona, useSession } from "@/store";
 import { Button } from "@/components/ui/button";
 import {
   Dropdown,
@@ -24,16 +24,20 @@ const navItems = [
 ];
 
 export function Header() {
-  const { persona, personas, setPersonaId, adminMode, toggleAdmin } =
-    usePersona();
+  const { persona, personas, setPersonaId } = usePersona();
   const { toggleAssistant } = useAssistant();
-  const { openChurn } = useChurn();
   const { count, openCart } = useCart();
+  const { exitSession } = useSession();
   const navigate = useNavigate();
 
   const handlePersonaChange = (id: PersonaId) => {
     setPersonaId(id);
     navigate("/home");
+  };
+
+  const handleExit = () => {
+    exitSession();
+    navigate("/");
   };
 
   return (
@@ -65,21 +69,6 @@ export function Header() {
               {item.label}
             </NavLink>
           ))}
-          {adminMode && (
-            <NavLink
-              to="/analytics"
-              className={({ isActive }) =>
-                cn(
-                  "rounded-lg px-3 py-1.5 text-sm font-medium transition-colors",
-                  isActive
-                    ? "bg-slate-100 text-slate-900"
-                    : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
-                )
-              }
-            >
-              Analytics
-            </NavLink>
-          )}
         </nav>
 
         <div className="ml-auto flex items-center gap-2">
@@ -129,24 +118,6 @@ export function Header() {
             </DropdownContent>
           </Dropdown>
 
-          <Button
-            variant={adminMode ? "default" : "outline"}
-            size="sm"
-            onClick={toggleAdmin}
-          >
-            {adminMode ? "Customer view" : "Admin view"}
-          </Button>
-
-          <Button
-            variant="coral"
-            size="sm"
-            onClick={openChurn}
-            title="Simulate a customer about to cancel"
-          >
-            <ShieldAlert className="h-4 w-4" />
-            <span className="hidden md:inline">Simulate churn</span>
-          </Button>
-
           <Button variant="ai" size="sm" onClick={toggleAssistant}>
             <MessageSquare className="h-4 w-4" />
             <span className="hidden md:inline">AI Assistant</span>
@@ -164,6 +135,16 @@ export function Header() {
               </span>
             )}
           </button>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleExit}
+            title="Leave the storefront and return to the portal chooser"
+          >
+            <LogOut className="h-4 w-4" />
+            <span className="hidden md:inline">Exit</span>
+          </Button>
         </div>
       </div>
     </header>

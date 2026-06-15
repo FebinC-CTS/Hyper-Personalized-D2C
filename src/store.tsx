@@ -15,12 +15,38 @@ const uid = () =>
     ? crypto.randomUUID()
     : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 
+// ── Session / role ────────────────────────────────────────────────────────────
+export type Role = "customer" | "admin";
+
+export interface AdminIdentity {
+  name: string;
+  email: string;
+  title: string;
+  initials: string;
+}
+
+// The single staff identity used for the admin console (demo — no real auth).
+const ADMIN_IDENTITY: AdminIdentity = {
+  name: "Avery Stone",
+  email: "avery.stone@primobrands.com",
+  title: "Retention & Growth",
+  initials: "AS",
+};
+
+interface SessionContextValue {
+  role: Role | null;
+  admin: AdminIdentity;
+  enterAsCustomer: (id: PersonaId) => void;
+  enterAsAdmin: () => void;
+  exitSession: () => void;
+}
+
+const SessionContext = createContext<SessionContextValue | null>(null);
+
 interface PersonaContextValue {
   persona: Persona;
   personas: Persona[];
   setPersonaId: (id: PersonaId) => void;
-  adminMode: boolean;
-  toggleAdmin: () => void;
 }
 
 const PersonaContext = createContext<PersonaContextValue | null>(null);
@@ -88,7 +114,7 @@ const CartContext = createContext<CartContextValue | null>(null);
 
 export function StoreProvider({ children }: { children: ReactNode }) {
   const [personaId, setPersonaIdState] = useState<PersonaId>("sarah");
-  const [adminMode, setAdminMode] = useState(false);
+  const [role, setRole] = useState<Role | null>(null);
   const [assistantOpen, setAssistantOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [churnOpen, setChurnOpen] = useState(false);
@@ -124,6 +150,30 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setCartOpen(false);
     setLastPlaced(null);
     setPaused(false);
+  }, []);
+
+  // ── Session actions ──
+  const enterAsCustomer = useCallback(
+    (id: PersonaId) => {
+      setPersonaId(id);
+      setRole("customer");
+    },
+    [setPersonaId]
+  );
+
+  const enterAsAdmin = useCallback(() => {
+    setAssistantOpen(false);
+    setCartOpen(false);
+    setRole("admin");
+  }, []);
+
+  const exitSession = useCallback(() => {
+    setRole(null);
+    setMessages([]);
+    setCartItems([]);
+    setCartOpen(false);
+    setAssistantOpen(false);
+    setChurnOpen(false);
   }, []);
 
   const appendMessage = useCallback((m: ChatMessage) => {
@@ -231,10 +281,19 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       persona,
       personas,
       setPersonaId,
-      adminMode,
-      toggleAdmin: () => setAdminMode((v) => !v),
     }),
-    [persona, setPersonaId, adminMode]
+    [persona, setPersonaId]
+  );
+
+  const sessionValue = useMemo<SessionContextValue>(
+    () => ({
+      role,
+      admin: ADMIN_IDENTITY,
+      enterAsCustomer,
+      enterAsAdmin,
+      exitSession,
+    }),
+    [role, enterAsCustomer, enterAsAdmin, exitSession]
   );
 
   const assistantValue = useMemo<AssistantContextValue>(
@@ -299,18 +358,26 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   );
 
   return (
-    <PersonaContext.Provider value={personaValue}>
-      <ToastContext.Provider value={toastValue}>
-        <CartContext.Provider value={cartValue}>
-          <AssistantContext.Provider value={assistantValue}>
-            <ChurnContext.Provider value={churnValue}>
-              {children}
-            </ChurnContext.Provider>
-          </AssistantContext.Provider>
-        </CartContext.Provider>
-      </ToastContext.Provider>
-    </PersonaContext.Provider>
+    <SessionContext.Provider value={sessionValue}>
+      <PersonaContext.Provider value={personaValue}>
+        <ToastContext.Provider value={toastValue}>
+          <CartContext.Provider value={cartValue}>
+            <AssistantContext.Provider value={assistantValue}>
+              <ChurnContext.Provider value={churnValue}>
+                {children}
+              </ChurnContext.Provider>
+            </AssistantContext.Provider>
+          </CartContext.Provider>
+        </ToastContext.Provider>
+      </PersonaContext.Provider>
+    </SessionContext.Provider>
   );
+}
+
+export function useSession() {
+  const ctx = useContext(SessionContext);
+  if (!ctx) throw new Error("useSession must be used inside StoreProvider");
+  return ctx;
 }
 
 export function usePersona() {

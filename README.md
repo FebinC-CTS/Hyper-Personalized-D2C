@@ -26,6 +26,13 @@ For the Primo Brands portfolio — ReadyRefresh, Pure Life, Poland Spring, Perri
 
 The result is a personalization layer that builds loyalty, lifts conversion, and reduces churn — without a content team hand-writing thousands of copy variants.
 
+The app ships as **two cleanly separated portals**, chosen from the landing page:
+
+- **Customer storefront** — the personalized shopping experience (greeting, recommendations, NL search, smart reorder, assistant, cart). Routes: `/home`, `/catalog`.
+- **Admin console** — a distinct staff workspace with its own sidebar layout and identity, covering KPIs, funnel, cohort retention, AI insights, churn-risk monitoring + AI rescue, and catalog management. Routes: `/admin`, `/admin/customers`, `/admin/catalog`.
+
+Each portal has its own shell, navigation, and route guards — a customer never sees admin tooling, and an admin never sees the cart or shopping assistant.
+
 ## Key Features
 
 | # | Feature | Description | AI |
@@ -128,28 +135,40 @@ npm run preview
 
 ```
 src/
-├── components/         UI — Header, AssistantPanel, ChurnModal, CartDrawer,
-│   │                   Toaster, recommendation & delivery cards
+├── components/         Customer UI — Header, CustomerShell, AssistantPanel,
+│   │                   ChurnModal, CartDrawer, Toaster, RequireRole (guard),
+│   │                   recommendation & delivery cards
+│   ├── admin/          AdminShell — sidebar layout, staff identity, sign out
 │   └── ui/             Reusable primitives (button, card, badge, dropdown)
-├── routes/             Landing · Home · Catalog (NL search) · Analytics
+├── routes/             Landing (portal chooser) · Home · Catalog (NL search)
+│   └── admin/          Dashboard · Customers (churn rescue) · Catalog (SKUs)
 ├── lib/
 │   ├── claude.ts       Anthropic client — complete(), stream(), caching, hooks
 │   ├── prompts.ts      Brand primer + one prompt builder per AI feature
 │   └── utils.ts        Recommendation scoring, persona snapshot, formatting
 ├── data/               Personas, products, orders, analytics (mock demo data)
-├── store.tsx           App state — persona, cart, assistant, churn, toasts
+├── store.tsx           App state — session/role, persona, cart, assistant, churn
 └── types.ts            Shared domain types
 ```
 
 ## Demo Walkthrough
 
-1. **Landing** — choose a persona to enter from their lens.
-2. **Home** — the AI greeting writes itself; open a recommendation's **"Why this?"** for live reasoning, then **Add to next delivery**.
-3. **Smart Reorder** — **Reorder now** drops the predicted SKU into the cart.
-4. **Cart** — adjust quantities, see the free-delivery threshold, **Place order**.
-5. **Catalog** — search in plain English; results are ranked by intent with an AI match reason.
-6. **Analytics** (Admin view) — AI insight bullets generate over the metrics; **Rescue** opens an AI-drafted churn intervention.
+1. **Landing** — pick a portal: **Customer experience** or **Admin console**.
+
+**Customer storefront**
+2. Choose a persona to enter from their lens.
+3. **Home** — the AI greeting writes itself; open a recommendation's **"Why this?"** for live reasoning, then **Add to next delivery**.
+4. **Smart Reorder** — **Reorder now** drops the predicted SKU into the cart.
+5. **Cart** — adjust quantities, see the free-delivery threshold, **Place order**.
+6. **Catalog** — search in plain English; results are ranked by intent with an AI match reason.
 7. **AI Assistant** — ask anything; the reply streams in, grounded in the persona and catalog.
+8. **Exit** (top right) returns to the portal chooser.
+
+**Admin console**
+9. **Dashboard** — KPIs, journey funnel, cohort retention, and AI insight bullets generated over the metrics.
+10. **Customers** — subscriber profiles and the churn-risk monitor; **Generate AI rescue** / **Rescue** opens an AI-drafted churn intervention.
+11. **Catalog** — manage the SKU portfolio with search and category filters.
+12. **Sign out** (sidebar) returns to the portal chooser.
 
 ## Security
 
