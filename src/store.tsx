@@ -15,34 +15,6 @@ const uid = () =>
     ? crypto.randomUUID()
     : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 
-// ── Session / role ────────────────────────────────────────────────────────────
-export type Role = "customer" | "admin";
-
-export interface AdminIdentity {
-  name: string;
-  email: string;
-  title: string;
-  initials: string;
-}
-
-// The single staff identity used for the admin console (demo — no real auth).
-const ADMIN_IDENTITY: AdminIdentity = {
-  name: "Avery Stone",
-  email: "avery.stone@primobrands.com",
-  title: "Retention & Growth",
-  initials: "AS",
-};
-
-interface SessionContextValue {
-  role: Role | null;
-  admin: AdminIdentity;
-  enterAsCustomer: (id: PersonaId) => void;
-  enterAsAdmin: () => void;
-  exitSession: () => void;
-}
-
-const SessionContext = createContext<SessionContextValue | null>(null);
-
 interface PersonaContextValue {
   persona: Persona;
   personas: Persona[];
@@ -63,14 +35,6 @@ interface AssistantContextValue {
 }
 
 const AssistantContext = createContext<AssistantContextValue | null>(null);
-
-interface ChurnContextValue {
-  open: boolean;
-  openChurn: () => void;
-  closeChurn: () => void;
-}
-
-const ChurnContext = createContext<ChurnContextValue | null>(null);
 
 // ── Toasts ──────────────────────────────────────────────────────────────────
 export interface Toast {
@@ -114,10 +78,8 @@ const CartContext = createContext<CartContextValue | null>(null);
 
 export function StoreProvider({ children }: { children: ReactNode }) {
   const [personaId, setPersonaIdState] = useState<PersonaId>("sarah");
-  const [role, setRole] = useState<Role | null>(null);
   const [assistantOpen, setAssistantOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [churnOpen, setChurnOpen] = useState(false);
 
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
@@ -148,32 +110,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setMessages([]);
     setCartItems([]);
     setCartOpen(false);
+    setAssistantOpen(false);
     setLastPlaced(null);
     setPaused(false);
-  }, []);
-
-  // ── Session actions ──
-  const enterAsCustomer = useCallback(
-    (id: PersonaId) => {
-      setPersonaId(id);
-      setRole("customer");
-    },
-    [setPersonaId]
-  );
-
-  const enterAsAdmin = useCallback(() => {
-    setAssistantOpen(false);
-    setCartOpen(false);
-    setRole("admin");
-  }, []);
-
-  const exitSession = useCallback(() => {
-    setRole(null);
-    setMessages([]);
-    setCartItems([]);
-    setCartOpen(false);
-    setAssistantOpen(false);
-    setChurnOpen(false);
   }, []);
 
   const appendMessage = useCallback((m: ChatMessage) => {
@@ -285,17 +224,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     [persona, setPersonaId]
   );
 
-  const sessionValue = useMemo<SessionContextValue>(
-    () => ({
-      role,
-      admin: ADMIN_IDENTITY,
-      enterAsCustomer,
-      enterAsAdmin,
-      exitSession,
-    }),
-    [role, enterAsCustomer, enterAsAdmin, exitSession]
-  );
-
   const assistantValue = useMemo<AssistantContextValue>(
     () => ({
       open: assistantOpen,
@@ -308,15 +236,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       resetMessages: () => setMessages([]),
     }),
     [assistantOpen, messages, appendMessage, updateMessage]
-  );
-
-  const churnValue = useMemo<ChurnContextValue>(
-    () => ({
-      open: churnOpen,
-      openChurn: () => setChurnOpen(true),
-      closeChurn: () => setChurnOpen(false),
-    }),
-    [churnOpen]
   );
 
   const toastValue = useMemo<ToastContextValue>(
@@ -358,26 +277,16 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   );
 
   return (
-    <SessionContext.Provider value={sessionValue}>
-      <PersonaContext.Provider value={personaValue}>
-        <ToastContext.Provider value={toastValue}>
-          <CartContext.Provider value={cartValue}>
-            <AssistantContext.Provider value={assistantValue}>
-              <ChurnContext.Provider value={churnValue}>
-                {children}
-              </ChurnContext.Provider>
-            </AssistantContext.Provider>
-          </CartContext.Provider>
-        </ToastContext.Provider>
-      </PersonaContext.Provider>
-    </SessionContext.Provider>
+    <PersonaContext.Provider value={personaValue}>
+      <ToastContext.Provider value={toastValue}>
+        <CartContext.Provider value={cartValue}>
+          <AssistantContext.Provider value={assistantValue}>
+            {children}
+          </AssistantContext.Provider>
+        </CartContext.Provider>
+      </ToastContext.Provider>
+    </PersonaContext.Provider>
   );
-}
-
-export function useSession() {
-  const ctx = useContext(SessionContext);
-  if (!ctx) throw new Error("useSession must be used inside StoreProvider");
-  return ctx;
 }
 
 export function usePersona() {
@@ -389,12 +298,6 @@ export function usePersona() {
 export function useAssistant() {
   const ctx = useContext(AssistantContext);
   if (!ctx) throw new Error("useAssistant must be used inside StoreProvider");
-  return ctx;
-}
-
-export function useChurn() {
-  const ctx = useContext(ChurnContext);
-  if (!ctx) throw new Error("useChurn must be used inside StoreProvider");
   return ctx;
 }
 
