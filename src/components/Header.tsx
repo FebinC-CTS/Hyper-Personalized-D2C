@@ -6,7 +6,7 @@ import {
   ShoppingBag,
   Sparkles,
 } from "lucide-react";
-import { useAssistant, useCart, usePersona, useSession } from "@/store";
+import { useAssistant, useCart, usePersona } from "@/store";
 import { Button } from "@/components/ui/button";
 import {
   Dropdown,
@@ -27,7 +27,6 @@ export function Header() {
   const { persona, personas, setPersonaId } = usePersona();
   const { toggleAssistant } = useAssistant();
   const { count, openCart } = useCart();
-  const { exitSession } = useSession();
   const navigate = useNavigate();
 
   const handlePersonaChange = (id: PersonaId) => {
@@ -36,7 +35,6 @@ export function Header() {
   };
 
   const handleExit = () => {
-    exitSession();
     navigate("/");
   };
 
@@ -140,10 +138,10 @@ export function Header() {
             variant="outline"
             size="sm"
             onClick={handleExit}
-            title="Leave the storefront and return to the portal chooser"
+            title="Switch to a different shopper"
           >
             <LogOut className="h-4 w-4" />
-            <span className="hidden md:inline">Exit</span>
+            <span className="hidden md:inline">Switch shopper</span>
           </Button>
         </div>
       </div>

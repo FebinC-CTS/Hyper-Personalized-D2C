@@ -1,5 +1,7 @@
 import { HeroGreeting } from "@/components/HeroGreeting";
 import { HomeStats } from "@/components/HomeStats";
+import { HydrationCard } from "@/components/HydrationCard";
+import { AutoReplenish } from "@/components/AutoReplenish";
 import { RecommendationCarousel } from "@/components/RecommendationCarousel";
 import { SmartReorder } from "@/components/SmartReorder";
 import { UpcomingDelivery } from "@/components/UpcomingDelivery";
@@ -9,11 +11,13 @@ export default function Home() {
     <div className="space-y-8">
       <HeroGreeting />
       <HomeStats />
+      <HydrationCard />
       <RecommendationCarousel />
       <div className="grid gap-4 md:grid-cols-2">
-        <SmartReorder />
+        <AutoReplenish />
         <UpcomingDelivery />
       </div>
+      <SmartReorder />
     </div>
   );
 }

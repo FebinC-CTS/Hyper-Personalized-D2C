@@ -133,38 +133,31 @@ export function nlSearchPrompt(
   };
 }
 
-// --- Analytics insights — wired in step 6 ----------------------------------
+// --- Hydration & wellness tip ------------------------------------------------
 
-export function insightsPrompt(metricsSummary: string): Built {
+export function hydrationPrompt(
+  persona: Persona,
+  facts: { perPersonGlasses: number; goal: number; people: number; pct: number }
+): Built {
   return {
     messages: [
       {
         role: "user",
-        content: `You are reviewing this snapshot of the customer analytics dashboard. Write exactly 4 bullet observations a product/growth lead would care about — patterns, risks, and one concrete recommendation. Each bullet must be 1 sentence, max 22 words. Use plain English, no jargon. Output as a bulleted list using "-" prefixes; no preamble, no headers.\n\nMetrics snapshot:\n${metricsSummary}`,
+        content: `Write ONE short, encouraging hydration tip (max 36 words) for this customer.
+
+From their recent Primo water deliveries they're getting about ${facts.perPersonGlasses} of ${facts.goal} recommended glasses per person per day (${facts.pct}% of goal), in a household of ${facts.people}. Use only these figures.
+
+If below goal, gently suggest one easy way to top up — keeping a bottle within reach, or one of their preferred flavored/sparkling waters for variety. If at or above goal, briefly celebrate the habit. Warm and supportive, never preachy or clinical. No exclamation marks. Output ONLY the tip, no preamble or quotes.
+
+Customer:
+${personaSnapshot(persona.id)}`,
       },
     ],
     options: {
       system: brandPrimer,
-      maxTokens: 320,
+      maxTokens: 120,
       temperature: 0.5,
     },
   };
 }
 
-// --- Churn intervention — wired in step 7 ----------------------------------
-
-export function churnInterventionPrompt(persona: Persona): Built {
-  return {
-    messages: [
-      {
-        role: "user",
-        content: `This customer just clicked "Cancel subscription". Analyze the persona snapshot, then produce a JSON object with exactly this shape (no prose, no markdown fences):\n\n{\n  "cancelReasonGuess": "<one short label, e.g. 'frequency mismatch'>",\n  "confidence": <0-1>,\n  "interventionType": "pause" | "discount" | "frequency-change" | "let-go",\n  "interventionRationale": "<one sentence, max 22 words>",\n  "retentionMessage": {\n    "subject": "<email subject line, max 8 words>",\n    "body": "<2-3 short paragraphs, warm, no exclamation marks, no \"Dear\" salutation>"\n  }\n}\n\nPersona:\n${personaSnapshot(persona.id)}`,
-      },
-    ],
-    options: {
-      system: brandPrimer,
-      maxTokens: 700,
-      temperature: 0.5,
-    },
-  };
-}

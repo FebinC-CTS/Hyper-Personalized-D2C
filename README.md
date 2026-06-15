@@ -24,14 +24,9 @@ Most direct-to-consumer storefronts treat every customer identically: the same g
 
 For the Primo Brands portfolio — ReadyRefresh, Pure Life, Poland Spring, Perrier, S.Pellegrino, Acqua Panna, and more — every screen reshapes around who is signed in. An office manager, a suburban family, and an at-risk solo professional each see copy, recommendations, and an assistant generated for *their* situation, in real time, by Claude.
 
-The result is a personalization layer that builds loyalty, lifts conversion, and reduces churn — without a content team hand-writing thousands of copy variants.
+The result is a personalization layer that builds loyalty, lifts conversion, and saves the customer money — without a content team hand-writing thousands of copy variants.
 
-The app ships as **two cleanly separated portals**, chosen from the landing page:
-
-- **Customer storefront** — the personalized shopping experience (greeting, recommendations, NL search, smart reorder, assistant, cart). Routes: `/home`, `/catalog`.
-- **Admin console** — a distinct staff workspace with its own sidebar layout and identity, covering KPIs, funnel, cohort retention, AI insights, churn-risk monitoring + AI rescue, and catalog management. Routes: `/admin`, `/admin/customers`, `/admin/catalog`.
-
-Each portal has its own shell, navigation, and route guards — a customer never sees admin tooling, and an admin never sees the cart or shopping assistant.
+This is a **customer-only experience** — everything in the app is built around the shopper's benefit. From the landing page you pick which shopper to experience it as; every screen then reshapes around that customer. Routes: `/` (pick a shopper), `/home`, `/catalog`.
 
 ## Key Features
 
@@ -42,11 +37,21 @@ Each portal has its own shell, navigation, and route guards — a customer never
 | 3 | **Smart reorder nudge** | Cadence-aware reminder to reorder a customer's staple SKU | ● |
 | 4 | **In-app AI assistant** | Streaming chat grounded in the persona snapshot and full catalog | ● |
 | 5 | **Natural-language search** | Search the catalog by intent ("light and fizzy for a picnic"), ranked by vibe | ● |
-| 6 | **Analytics insights** | Auto-generated observations over the metrics dashboard for growth leads | ● |
-| 7 | **Churn rescue** | On cancellation, predicts the reason and drafts a tailored retention email | ● |
+| 6 | **Hydration & wellness** | Estimates the household's daily intake from delivered water vs an 8-glass goal, with an encouraging AI tip | ● |
+| 7 | **Auto-replenish** | Learns the customer's usual basket + cadence and ships it automatically — never run out, skip anytime | ○ |
 | 8 | **Cart & checkout** | Add to delivery, adjust quantities, free-delivery logic, place order | ○ |
 | 9 | **Delivery management** | Pause / resume deliveries and edit the upcoming order | ○ |
-| 10 | **Persona switching** | Experience the app as an office, a family, or an at-risk customer | ○ |
+| 10 | **Shopper switching** | Experience the app as an office, a family, or an at-risk customer | ○ |
+
+### Built around customer benefit
+
+| Benefit | How the app delivers it |
+|---|---|
+| 💧 **Hydration & wellness** | A progress ring estimates how much of the 8-glass daily goal each person is getting from their Primo deliveries, with a warm AI tip and a one-tap flavored-water suggestion for variety. No nagging reminders — just a gentle, supportive nudge. |
+| ♻️ **Never run out, zero effort** | *Auto-replenish* learns the usual basket and cadence and ships it on schedule; one tap to skip or add-to-cart. |
+| 🎯 **Only what's relevant** | Greeting, recommendations, and search all reshape around the individual — no generic bestseller noise. |
+| ⏱️ **Save time** | Natural-language search and the in-app assistant answer "what fits me?" and "when's my delivery?" instantly. |
+| 🎛️ **Stay in control** | Pause/resume, edit the upcoming order, skip a cycle — all self-serve. |
 
 <sub>● AI-powered (Claude) &nbsp;·&nbsp; ○ Deterministic application logic</sub>
 
@@ -57,7 +62,7 @@ Each portal has its own shell, navigation, and route guards — a customer never
         │
         ▼
  React + TypeScript SPA        greeting · recommendations · NL search ·
-        │                      assistant · analytics insights · churn rescue
+        │                      assistant · smart reorder · cart
         ▼
  Prompt layer                  brand-safe primer + per-feature prompt builders,
  (src/lib/prompts.ts)          grounded in persona snapshot + product catalog
@@ -89,7 +94,7 @@ Each portal has its own shell, navigation, and route guards — a customer never
 | Styling | Tailwind CSS |
 | UI primitives | Radix UI, lucide-react, Framer Motion, Recharts |
 | Routing | React Router |
-| State | React Context (persona · cart · assistant · churn · toasts) |
+| State | React Context (persona · cart · assistant · toasts) |
 
 ## Getting Started
 
@@ -136,39 +141,31 @@ npm run preview
 ```
 src/
 ├── components/         Customer UI — Header, CustomerShell, AssistantPanel,
-│   │                   ChurnModal, CartDrawer, Toaster, RequireRole (guard),
-│   │                   recommendation & delivery cards
-│   ├── admin/          AdminShell — sidebar layout, staff identity, sign out
+│   │                   CartDrawer, Toaster, recommendation & delivery cards
 │   └── ui/             Reusable primitives (button, card, badge, dropdown)
-├── routes/             Landing (portal chooser) · Home · Catalog (NL search)
-│   └── admin/          Dashboard · Customers (churn rescue) · Catalog (SKUs)
+├── routes/             Landing (shopper picker) · Home · Catalog (NL search)
 ├── lib/
 │   ├── claude.ts       Anthropic client — complete(), stream(), caching, hooks
 │   ├── prompts.ts      Brand primer + one prompt builder per AI feature
+│   ├── replenish.ts    Auto-replenish engine (usual basket + delivery cadence)
+│   ├── hydration.ts    Hydration engine (delivered volume → daily glasses vs goal)
 │   └── utils.ts        Recommendation scoring, persona snapshot, formatting
-├── data/               Personas, products, orders, analytics (mock demo data)
-├── store.tsx           App state — session/role, persona, cart, assistant, churn
+├── data/               Personas, products, orders (mock demo data)
+├── store.tsx           App state — persona, cart, assistant, toasts
 └── types.ts            Shared domain types
 ```
 
 ## Demo Walkthrough
 
-1. **Landing** — pick a portal: **Customer experience** or **Admin console**.
-
-**Customer storefront**
-2. Choose a persona to enter from their lens.
-3. **Home** — the AI greeting writes itself; open a recommendation's **"Why this?"** for live reasoning, then **Add to next delivery**.
-4. **Smart Reorder** — **Reorder now** drops the predicted SKU into the cart.
-5. **Cart** — adjust quantities, see the free-delivery threshold, **Place order**.
-6. **Catalog** — search in plain English; results are ranked by intent with an AI match reason.
-7. **AI Assistant** — ask anything; the reply streams in, grounded in the persona and catalog.
-8. **Exit** (top right) returns to the portal chooser.
-
-**Admin console**
-9. **Dashboard** — KPIs, journey funnel, cohort retention, and AI insight bullets generated over the metrics.
-10. **Customers** — subscriber profiles and the churn-risk monitor; **Generate AI rescue** / **Rescue** opens an AI-drafted churn intervention.
-11. **Catalog** — manage the SKU portfolio with search and category filters.
-12. **Sign out** (sidebar) returns to the portal chooser.
+1. **Landing** — pick which shopper to experience the storefront as.
+2. **Home** — the AI greeting writes itself; open a recommendation's **"Why this?"** for live reasoning, then **Add to next delivery**.
+3. **Hydration** — a progress ring shows each person's daily intake vs the 8-glass goal, with an AI wellness tip; add a flavored water for variety in one tap.
+4. **Auto-replenish** — turn on "your usual, on autopilot," then **Skip next** or **Add usual to cart**.
+5. **Smart Reorder** — **Reorder now** drops the predicted SKU into the cart.
+6. **Cart** — adjust quantities, see the free-delivery threshold, **Place order**.
+7. **Catalog** — search in plain English; results are ranked by intent with an AI match reason.
+8. **AI Assistant** — ask anything; the reply streams in, grounded in the persona and catalog.
+9. **Switch shopper** (top right) returns to the picker to try another customer.
 
 ## Security
 
@@ -177,13 +174,13 @@ The Anthropic API key lives only in `.env.local` and is injected server-side by 
 ## Roadmap
 
 - [ ] Persist cart and orders to `localStorage` / a backend
-- [ ] Flow placed orders back into customer history and analytics
-- [ ] Streaming for all single-shot AI features (search, insights, churn)
+- [ ] Flow placed orders back into the customer's own history
+- [ ] Streaming for all single-shot AI features (search, recommendations)
 - [ ] Production proxy as a serverless function
 
 ## Disclaimer
 
-All customer, order, and analytics data in this repository is **fabricated for demonstration purposes**. No real customer data is used. Prices are illustrative.
+All customer and order data in this repository is **fabricated for demonstration purposes**. No real customer data is used. Prices are illustrative.
 
 ---
 
