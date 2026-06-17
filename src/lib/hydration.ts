@@ -1,23 +1,23 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // Hydration & wellness engine
 //
-// Estimates how much water a household is getting from their Primo deliveries
-// and frames it against the familiar "8 glasses a day" goal. Pure functions over
-// the order history + product formats. In production a smart-dispenser or app
-// log would refine this; here it's derived from delivered volume.
+// Estimates how much water a household gets from their Primo deliveries and
+// frames it against a realistic daily goal *for delivered water* (the rest of a
+// person's intake comes from tap, food, etc.). Pure functions over the order
+// history + product formats. In production a smart-dispenser or app log would
+// refine this.
 // ─────────────────────────────────────────────────────────────────────────────
 
 import type { PersonaId } from "@/types";
 import { ordersByPersona } from "@/data/orders";
 import { getProduct } from "@/data/products";
 import { getPersona } from "@/data/personas";
-import { daysAgo } from "@/lib/utils";
 
 const OZ_TO_L = 0.0295735;
 const GAL_TO_L = 3.78541;
-const GLASS_L = 0.25; // one 250 mL glass
-const GOAL_GLASSES = 8; // recommended glasses per person per day
-const WINDOW_DAYS = 60;
+const GLASS_L = 0.2366; // one 8 oz glass
+const GOAL_GLASSES = 3; // realistic glasses/person/day from delivered water
+const MIN_SPAN_DAYS = 30;
 
 const round1 = (n: number) => Math.round(n * 10) / 10;
 
@@ -53,7 +53,7 @@ export interface Hydration {
   people: number;
   litersPerDay: number; // household, from deliveries
   perPersonGlasses: number; // per person per day
-  goalPerPerson: number; // 8
+  goalPerPerson: number; // daily delivered-water goal
   pct: number; // perPersonGlasses / goal, capped 0–100
   onTrack: boolean;
 }
@@ -62,17 +62,25 @@ export function analyzeHydration(personaId: PersonaId): Hydration {
   const persona = getPersona(personaId);
   const orders = ordersByPersona(personaId);
 
+  // Total delivered volume + the span it was delivered over. Using the
+  // customer's typical (lifetime) rate — rather than a fixed recent window —
+  // reflects their real habit and isn't skewed by a recent gap in ordering.
   let liters = 0;
   for (const o of orders) {
-    if (daysAgo(o.date) > WINDOW_DAYS) continue;
     for (const it of o.items) {
       const p = getProduct(it.productId);
       if (p) liters += litersPerUnit(p.format) * it.quantity;
     }
   }
 
+  let spanDays = MIN_SPAN_DAYS;
+  if (orders.length >= 2) {
+    const times = orders.map((o) => new Date(o.date).getTime());
+    spanDays = Math.max(MIN_SPAN_DAYS, (Math.max(...times) - Math.min(...times)) / 86_400_000);
+  }
+
   const people = householdSize(persona.household);
-  const litersPerDay = liters / WINDOW_DAYS;
+  const litersPerDay = liters / spanDays;
   const perPersonGlasses = litersPerDay / GLASS_L / people;
   const pct = Math.min(100, Math.max(0, Math.round((perPersonGlasses / GOAL_GLASSES) * 100)));
 
