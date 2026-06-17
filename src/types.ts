@@ -1,4 +1,4 @@
-export type PersonaId = "sarah" | "davis" | "marcus";
+export type PersonaId = "sarah";
 
 export type PersonaSegment = "office" | "residential" | "churning";
 
@@ -9,7 +9,7 @@ export interface Persona {
   role: string;
   location: string;
   segment: PersonaSegment;
-  household: string;
+  group: string;
   tenureMonths: number;
   avatarInitials: string;
   bio: string;

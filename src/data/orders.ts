@@ -1,11 +1,8 @@
 import type { Order, PersonaId } from "@/types";
 import { getProduct } from "@/data/products";
 
-// 6-month order history per persona, anchored to today = 2026-05-15.
-// Cadence reflects each persona's profile:
+// 6-month order history, anchored to today = 2026-05-15.
 //   - Sarah (office): weekly Friday delivery, heavy on jugs + sparkling for meetings
-//   - Davis (residential): monthly + a spring uplift in flavored kid drinks
-//   - Marcus (churning): premium sparkling, frequency declining sharply, gap before today
 
 const items = (...pairs: [string, number][]) =>
   pairs.map(([productId, quantity]) => ({ productId, quantity }));
@@ -133,74 +130,7 @@ const sarahOrders: Order[] = [
   )),
 ];
 
-const davisOrders: Order[] = [
-  order("d-001", "davis", "2025-11-18", items(
-    ["pure-life-1gal", 2],
-    ["poland-spring-24pk-500ml", 1]
-  )),
-  order("d-002", "davis", "2025-12-16", items(
-    ["pure-life-1gal", 2],
-    ["pure-life-24pk-500ml", 2]
-  )),
-  order("d-003", "davis", "2026-01-13", items(
-    ["pure-life-1gal", 2],
-    ["poland-spring-1gal", 1]
-  )),
-  order("d-004", "davis", "2026-02-10", items(
-    ["pure-life-1gal", 2],
-    ["pure-life-24pk-500ml", 2]
-  )),
-  // skipped a week — family vacation
-  order("d-005", "davis", "2026-03-17", items(
-    ["pure-life-1gal", 2],
-    ["splash-strawberry-12pk", 1]
-  )),
-  order("d-006", "davis", "2026-04-14", items(
-    ["pure-life-1gal", 3],
-    ["splash-strawberry-12pk", 2],
-    ["splash-lemon-12pk", 1]
-  )),
-  order("d-007", "davis", "2026-04-27", items(
-    ["pure-life-1gal", 2],
-    ["splash-strawberry-12pk", 2],
-    ["pure-life-24pk-500ml", 1]
-  )),
-];
-
-const marcusOrders: Order[] = [
-  order("m-001", "marcus", "2025-11-20", items(
-    ["spellegrino-12pk-500ml", 2],
-    ["acqua-panna-12pk-500ml", 1],
-    ["perrier-24pk-cans", 1]
-  )),
-  order("m-002", "marcus", "2025-12-08", items(
-    ["spellegrino-750ml-glass", 1],
-    ["saratoga-12pk-750ml", 1]
-  )),
-  order("m-003", "marcus", "2025-12-28", items(
-    ["spellegrino-12pk-500ml", 2],
-    ["perrier-lime-10pk", 2]
-  )),
-  // gap — first signal
-  order("m-004", "marcus", "2026-02-04", items(
-    ["spellegrino-12pk-500ml", 1],
-    ["acqua-panna-12pk-500ml", 1]
-  )),
-  // larger gap — frequency collapsing
-  order("m-005", "marcus", "2026-03-12", items(
-    ["perrier-24pk-cans", 1]
-  )),
-  // last order before today; nothing since.
-  order("m-006", "marcus", "2026-04-03", items(
-    ["spellegrino-12pk-500ml", 1]
-  )),
-];
-
-export const orders: Order[] = [
-  ...sarahOrders,
-  ...davisOrders,
-  ...marcusOrders,
-];
+export const orders: Order[] = [...sarahOrders];
 
 export const ordersByPersona = (id: PersonaId): Order[] =>
   orders

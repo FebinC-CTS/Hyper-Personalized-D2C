@@ -4,7 +4,7 @@ import { useCart, usePersona } from "@/store";
 import { products, getProduct } from "@/data/products";
 import { claudeKeyConfigured, complete, parseJsonObject } from "@/lib/claude";
 import { nlSearchPrompt } from "@/lib/prompts";
-import { cn, formatCurrency } from "@/lib/utils";
+import { cn, formatCurrency, keywordSearch } from "@/lib/utils";
 import { AIResponse } from "@/components/AIResponse";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -12,7 +12,7 @@ import type { Product } from "@/types";
 
 interface SearchResult {
   product: Product;
-  reason: string;
+  reason?: string;
 }
 
 const EXAMPLES = [
@@ -72,6 +72,7 @@ export default function Catalog() {
   const [submitted, setSubmitted] = useState("");
   const [results, setResults] = useState<SearchResult[] | null>(null);
   const [summary, setSummary] = useState("");
+  const [exact, setExact] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -79,10 +80,30 @@ export default function Catalog() {
     const q = raw.trim();
     if (!q || loading) return;
     setSubmitted(q);
-    setLoading(true);
     setError(null);
     setResults(null);
     setSummary("");
+
+    // 1) Literal spec match (pack size, volume, format, brand, category) —
+    //    exact and deterministic, so "12 pack" never returns a 10-pack.
+    const literal = keywordSearch(q, products);
+    if (literal.length > 0) {
+      setExact(true);
+      setResults(literal.map((product) => ({ product })));
+      setSummary(
+        `${literal.length} product${literal.length > 1 ? "s" : ""} matching "${q}".`
+      );
+      setLoading(false);
+      return;
+    }
+
+    // 2) Descriptive / vibe query → AI semantic ranking.
+    setExact(false);
+    if (!claudeKeyConfigured) {
+      setResults([]);
+      return;
+    }
+    setLoading(true);
     try {
       const { messages, options } = nlSearchPrompt(persona, q, products);
       const text = await complete(messages, options);
@@ -95,7 +116,7 @@ export default function Catalog() {
           const product = getProduct(r.id);
           return product ? { product, reason: r.reason } : null;
         })
-        .filter((r): r is SearchResult => r !== null);
+        .filter((r): r is { product: Product; reason: string } => r !== null);
       setResults(mapped);
       setSummary(obj.summary ?? "");
     } catch (e) {
@@ -109,6 +130,7 @@ export default function Catalog() {
     setSubmitted("");
     setResults(null);
     setSummary("");
+    setExact(false);
     setError(null);
     setInput("");
   };
@@ -194,16 +216,23 @@ export default function Catalog() {
             </button>
           </div>
 
-          <AIResponse
-            loading={loading}
-            error={error}
-            onRetry={() => void run(submitted)}
-            badgeLabel="AI match"
-            size="sm"
-            skeletonLines={2}
-          >
-            {summary && <p className="leading-relaxed">{summary}</p>}
-          </AIResponse>
+          {exact ? (
+            <p className="flex items-center gap-1.5 text-sm text-slate-600">
+              <Search className="h-3.5 w-3.5 text-slate-400" />
+              {summary}
+            </p>
+          ) : (
+            <AIResponse
+              loading={loading}
+              error={error}
+              onRetry={() => void run(submitted)}
+              badgeLabel="AI match"
+              size="sm"
+              skeletonLines={2}
+            >
+              {summary && <p className="leading-relaxed">{summary}</p>}
+            </AIResponse>
+          )}
 
           {results && results.length > 0 && (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

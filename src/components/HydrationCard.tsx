@@ -104,9 +104,9 @@ export function HydrationCard() {
               / {h.goalPerPerson} glasses
             </span>
           </div>
-          <div className="text-sm text-slate-500">per person, per day</div>
+          <div className="text-sm text-slate-500">per person, per day from Primo</div>
           <div className="mt-1 text-xs text-slate-400">
-            Household of {h.people} · ~{h.litersPerDay} L/day from your deliveries
+Group of {h.people} · ~{h.litersPerDay} L/day from your deliveries
           </div>
         </div>
       </div>
