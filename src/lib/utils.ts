@@ -34,6 +34,41 @@ export interface Recommendation {
   reasons: string[];
 }
 
+// ── Literal keyword / spec search ──────────────────────────────────────────────
+// Deterministic exact-match for concrete queries (pack size, volume, format,
+// brand, category). A product matches only if EVERY meaningful token is present,
+// so "12 pack" returns only 12-packs — never a 10-pack. Descriptive/vibe queries
+// match nothing here and fall through to the AI semantic search.
+const SEARCH_STOPWORDS = new Set([
+  "a", "an", "the", "for", "of", "with", "and", "or", "to", "in", "on", "some",
+  "something", "please", "i", "want", "need", "me", "my", "that", "this", "is",
+  "are", "find", "show", "get", "looking", "like",
+]);
+
+// Lowercase, strip punctuation, and glue a number to its unit ("500 mL" → "500ml",
+// "12-pack" → "12pack") so specs compare cleanly.
+const normalizeSearch = (s: string) =>
+  s
+    .toLowerCase()
+    .replace(/[^a-z0-9.]+/g, " ")
+    .replace(/(\d)\s+(ml|oz|l|gal|gallon|pk|pack)\b/g, "$1$2")
+    .replace(/\s+/g, " ")
+    .trim();
+
+export function keywordSearch(query: string, list: Product[] = products): Product[] {
+  const tokens = normalizeSearch(query)
+    .split(" ")
+    .filter((t) => t && !SEARCH_STOPWORDS.has(t));
+  if (!tokens.length) return [];
+
+  return list.filter((p) => {
+    const hay = normalizeSearch(
+      `${p.name} ${p.brand} ${p.category} ${p.format} ${p.tags.join(" ")}`
+    );
+    return tokens.every((t) => hay.includes(t));
+  });
+}
+
 // In production this would hit our recommendation service.
 // For the demo we score products against a persona's stated preferences,
 // purchase history, and a small set of contextual nudges.
@@ -125,7 +160,7 @@ export function personaSnapshot(personaId: PersonaId): string {
   return [
     `Persona: ${p.name} (${p.role}, ${p.location})`,
     `Segment: ${p.segment}; tenure: ${p.tenureMonths} months; churn risk: ${(p.churnRisk * 100).toFixed(0)}%`,
-    `Household: ${p.household}`,
+    `Group: ${p.group}`,
     `Preferences: categories=${p.preferences.favoriteCategories.join("/")}; flavors=${p.preferences.flavorNotes.join("/")}; sustainability=${p.preferences.sustainabilityFocus}`,
     `Last order ${p.lastOrderDaysAgo} days ago. Next delivery: ${p.nextDeliveryInDays === null ? "none scheduled" : `in ${p.nextDeliveryInDays} days`}`,
     `Top SKUs: ${top.map((t) => `${t.productId}(${t.units}u)`).join(", ")}`,

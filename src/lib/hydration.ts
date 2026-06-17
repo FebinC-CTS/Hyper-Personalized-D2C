@@ -1,7 +1,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // Hydration & wellness engine
 //
-// Estimates how much water a household gets from their Primo deliveries and
+// Estimates how much water a customer's group gets from their Primo deliveries and
 // frames it against a realistic daily goal *for delivered water* (the rest of a
 // person's intake comes from tap, food, etc.). Pure functions over the order
 // history + product formats. In production a smart-dispenser or app log would
@@ -42,16 +42,16 @@ export function litersPerUnit(format: string): number {
   return count * unitLiters;
 }
 
-function householdSize(household: string): number {
-  const h = household.toLowerCase();
-  if (h.includes("single") || h.includes("solo")) return 1;
-  const m = /(\d+)/.exec(h);
+function groupSize(group: string): number {
+  const g = group.toLowerCase();
+  if (g.includes("single") || g.includes("solo")) return 1;
+  const m = /(\d+)/.exec(g);
   return m ? parseInt(m[1], 10) : 1;
 }
 
 export interface Hydration {
   people: number;
-  litersPerDay: number; // household, from deliveries
+  litersPerDay: number; // group total, from deliveries
   perPersonGlasses: number; // per person per day
   goalPerPerson: number; // daily delivered-water goal
   pct: number; // perPersonGlasses / goal, capped 0–100
@@ -79,7 +79,7 @@ export function analyzeHydration(personaId: PersonaId): Hydration {
     spanDays = Math.max(MIN_SPAN_DAYS, (Math.max(...times) - Math.min(...times)) / 86_400_000);
   }
 
-  const people = householdSize(persona.household);
+  const people = groupSize(persona.group);
   const litersPerDay = liters / spanDays;
   const perPersonGlasses = litersPerDay / GLASS_L / people;
   const pct = Math.min(100, Math.max(0, Math.round((perPersonGlasses / GOAL_GLASSES) * 100)));

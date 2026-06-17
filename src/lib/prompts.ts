@@ -145,7 +145,7 @@ export function hydrationPrompt(
         role: "user",
         content: `Write ONE short, encouraging hydration tip (max 36 words) for this customer.
 
-From their recent Primo water deliveries they're getting about ${facts.perPersonGlasses} of ${facts.goal} recommended glasses per person per day (${facts.pct}% of goal), in a household of ${facts.people}. Use only these figures.
+From their recent Primo water deliveries they're getting about ${facts.perPersonGlasses} of ${facts.goal} recommended glasses per person per day (${facts.pct}% of goal), in a group of ${facts.people}. Use only these figures.
 
 If below goal, gently suggest one easy way to top up — keeping a bottle within reach, or one of their preferred flavored/sparkling waters for variety. If at or above goal, briefly celebrate the habit. Warm and supportive, never preachy or clinical. No exclamation marks. Output ONLY the tip, no preamble or quotes.
 
